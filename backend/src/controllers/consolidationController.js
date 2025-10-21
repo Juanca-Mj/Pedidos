@@ -2,12 +2,15 @@ import Consolidation from "../models/Consolidation.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Store from "../models/Store.js";
+import User from "../models/User.js"; // 🔹 Necesario para asignar proveedores
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // Estados activos
-const CONS_ACTIVE = ["en_consolidacion","en_asignacion","en_despacho"];
+const CONS_ACTIVE = ["en_consolidacion", "en_asignacion", "en_despacho"];
 
+// =========================================================
 // GET /api/consolidations  (filtro opcional ?zone=...&status=...)
+// =========================================================
 export const getConsolidations = asyncHandler(async (req, res) => {
   const { zone, status } = req.query;
   const q = {};
@@ -15,42 +18,46 @@ export const getConsolidations = asyncHandler(async (req, res) => {
   if (status) q.status = status;
 
   const cons = await Consolidation.find(q)
-    .populate("provider_id", "name role")
+    .populate("provider_id", "name contact zones available role")
     .sort({ created_at: -1 });
 
   res.json(cons);
 });
 
+// =========================================================
 // POST /api/consolidations  (PLATAFORMA) body: { zone: "Zona Norte" }
+// =========================================================
 export const createConsolidation = asyncHandler(async (req, res) => {
   const { zone } = req.body;
   if (!zone) return res.status(400).json({ error: "Debe indicar 'zone'" });
 
-  // 1) Verificar que no exista consolidación ACTIVA por zona
+  // 1️⃣ Verificar que no exista consolidación ACTIVA por zona
   const exists = await Consolidation.exists({ zone, status: { $in: CONS_ACTIVE } });
-  if (exists) return res.status(409).json({ error: "Ya existe una consolidación activa para esta zona" });
+  if (exists)
+    return res.status(409).json({ error: "Ya existe una consolidación activa para esta zona" });
 
-  // 2) Tomar pedidos 'pendiente' de la zona y pasarlos a 'en_consolidacion'
+  // 2️⃣ Tomar pedidos 'pendiente' de la zona y pasarlos a 'en_consolidacion'
   const pending = await Order.find({ zone, status: "pendiente" });
-  if (!pending.length) return res.status(400).json({ error: "No hay pedidos pendientes para consolidar" });
+  if (!pending.length)
+    return res.status(400).json({ error: "No hay pedidos pendientes para consolidar" });
 
   await Order.updateMany(
     { zone, status: "pendiente" },
     { $set: { status: "en_consolidacion" } }
   );
 
-  // 3) Agrupar por producto
+  // 3️⃣ Agrupar por producto
   const lines = [];
   for (const o of pending) {
     for (const it of o.items) {
-      let line = lines.find(l => String(l.product_id) === String(it.product_id));
+      let line = lines.find((l) => String(l.product_id) === String(it.product_id));
       if (!line) {
         line = {
           product_id: it.product_id,
           sku: it.sku,
           product_name: it.product_name,
           total_quantity: 0,
-          order_refs: []
+          order_refs: [],
         };
         lines.push(line);
       }
@@ -59,30 +66,71 @@ export const createConsolidation = asyncHandler(async (req, res) => {
         order_id: o._id,
         store_id: o.store_id,
         tendero_user_id: o.tendero_user_id,
-        quantity: it.quantity
+        quantity: it.quantity,
       });
     }
   }
 
-  // 4) Crear consolidación
+  // 4️⃣ Crear consolidación (sin proveedor asignado todavía)
   const cons = await Consolidation.create({
     zone,
     status: "en_consolidacion",
     provider_id: null,
     items: lines,
-    tracking: [{ at: new Date(), status: "en_consolidacion", by_role: "PLATAFORMA", note: "Consolidación creada" }]
+    tracking: [
+      {
+        at: new Date(),
+        status: "en_consolidacion",
+        by_role: "PLATAFORMA",
+        note: "Consolidación creada",
+      },
+    ],
   });
 
-  // 5) Linkear órdenes a la consolidación
+  // 5️⃣ Vincular órdenes a la consolidación
   await Order.updateMany(
-    { _id: { $in: pending.map(p => p._id) } },
+    { _id: { $in: pending.map((p) => p._id) } },
     { $set: { consolidation_id: cons._id } }
   );
+
+  // 6️⃣ Buscar proveedor disponible automáticamente
+  const provider = await User.findOne({
+    role: "PROVEEDOR",
+    zones: zone,
+    available: true,
+  });
+
+  if (provider) {
+    cons.provider_id = provider._id;
+    cons.status = "en_asignacion";
+    cons.tracking.push({
+      at: new Date(),
+      status: "en_asignacion",
+      by_role: "PLATAFORMA",
+      note: `Proveedor asignado automáticamente (${provider.name})`,
+    });
+
+    // Marcar proveedor como ocupado
+    provider.available = false;
+    await provider.save();
+    await cons.save();
+  } else {
+    cons.tracking.push({
+      at: new Date(),
+      status: "en_consolidacion",
+      by_role: "PLATAFORMA",
+      note: "No hay proveedores disponibles para esta zona",
+    });
+    await cons.save();
+  }
 
   res.status(201).json(cons);
 });
 
-// POST /api/consolidations/:id/assign-provider  (PLATAFORMA) body: { provider_user_id }
+// =========================================================
+// POST /api/consolidations/:id/assign-provider (PLATAFORMA)
+// body: { provider_user_id }
+// =========================================================
 export const assignProvider = asyncHandler(async (req, res) => {
   const { provider_user_id } = req.body;
   const cons = await Consolidation.findById(req.params.id);
@@ -91,15 +139,32 @@ export const assignProvider = asyncHandler(async (req, res) => {
   if (cons.status !== "en_consolidacion")
     return res.status(400).json({ error: "La consolidación no está en estado 'en_consolidacion'" });
 
-  cons.provider_id = provider_user_id;
+  const provider = await User.findById(provider_user_id);
+  if (!provider)
+    return res.status(404).json({ error: "Proveedor no encontrado" });
+
+  if (!provider.available)
+    return res.status(409).json({ error: "El proveedor ya está ocupado" });
+
+  cons.provider_id = provider._id;
   cons.status = "en_asignacion";
-  cons.tracking.push({ at: new Date(), status: "en_asignacion", by_role: "PLATAFORMA", note: "Proveedor asignado" });
+  cons.tracking.push({
+    at: new Date(),
+    status: "en_asignacion",
+    by_role: "PLATAFORMA",
+    note: "Proveedor asignado manualmente",
+  });
   await cons.save();
+
+  provider.available = false; // marcar ocupado
+  await provider.save();
 
   res.json(cons);
 });
 
+// =========================================================
 // POST /api/consolidations/:id/dispatch  (PROVEEDOR)
+// =========================================================
 export const moveToDispatch = asyncHandler(async (req, res) => {
   const cons = await Consolidation.findById(req.params.id);
   if (!cons) return res.status(404).json({ error: "Consolidación no encontrada" });
@@ -112,10 +177,14 @@ export const moveToDispatch = asyncHandler(async (req, res) => {
 
   cons.status = "en_despacho";
   cons.dispatched_at = new Date();
-  cons.tracking.push({ at: new Date(), status: "en_despacho", by_role: "PROVEEDOR", note: "Pedido consolidado despachado" });
+  cons.tracking.push({
+    at: new Date(),
+    status: "en_despacho",
+    by_role: "PROVEEDOR",
+    note: "Pedido consolidado despachado",
+  });
   await cons.save();
 
-  // Propagar a órdenes
   await Order.updateMany(
     { consolidation_id: cons._id },
     { $set: { status: "en_despacho" } }
@@ -124,7 +193,9 @@ export const moveToDispatch = asyncHandler(async (req, res) => {
   res.json(cons);
 });
 
+// =========================================================
 // POST /api/consolidations/:id/deliver  (PROVEEDOR)
+// =========================================================
 export const markDelivered = asyncHandler(async (req, res) => {
   const cons = await Consolidation.findById(req.params.id);
   if (!cons) return res.status(404).json({ error: "Consolidación no encontrada" });
@@ -134,14 +205,28 @@ export const markDelivered = asyncHandler(async (req, res) => {
 
   cons.status = "entregado";
   cons.delivered_at = new Date();
-  cons.tracking.push({ at: new Date(), status: "entregado", by_role: "PROVEEDOR", note: "Consolidado entregado" });
+  cons.tracking.push({
+    at: new Date(),
+    status: "entregado",
+    by_role: "PROVEEDOR",
+    note: "Consolidado entregado",
+  });
   await cons.save();
 
-  // Propagar a órdenes (entregado). El tendero luego puede marcar 'received' en su pedido.
+  // Propagar a órdenes
   await Order.updateMany(
     { consolidation_id: cons._id },
     { $set: { status: "entregado" } }
   );
+
+  // 🔄 Liberar al proveedor (disponible nuevamente)
+  if (cons.provider_id) {
+    const provider = await User.findById(cons.provider_id);
+    if (provider) {
+      provider.available = true;
+      await provider.save();
+    }
+  }
 
   res.json(cons);
 });

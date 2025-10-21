@@ -48,7 +48,7 @@ export const api = {
     http("/api/stores", {
       method: "POST",
       body: data,
-      role: "PLATAFORMA", // o "TENDERO" si decides que los tenderos también puedan crear tiendas
+      role: "PLATAFORMA", // o "TENDERO" si decides permitirlo
     }),
   updateStore: (id, data) =>
     http(`/api/stores/${id}`, {
@@ -62,7 +62,7 @@ export const api = {
       role: "PLATAFORMA",
     }),
 
-  // === Usuarios ===
+  // === Usuarios / Proveedores ===
   listUsers: () => http("/api/users"),
   createUser: (data) =>
     http("/api/users", {
@@ -79,6 +79,13 @@ export const api = {
   deleteUser: (id) =>
     http(`/api/users/${id}`, {
       method: "DELETE",
+      role: "PLATAFORMA",
+    }),
+
+  // 🔹 Nuevo: obtener proveedores filtrados por zona (opcional)
+  listProvidersByZone: (zone = "") =>
+    http(`/api/providers${zone ? `?zone=${zone}` : ""}`, {
+      method: "GET",
       role: "PLATAFORMA",
     }),
 

@@ -175,6 +175,7 @@ export default function ProveedorPage() {
                 <th>Nombre</th>
                 <th>Contacto</th>
                 <th>Zonas</th>
+                <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -183,7 +184,14 @@ export default function ProveedorPage() {
                 <tr key={p._id}>
                   <td>{p.name}</td>
                   <td>{p.contact}</td>
-                  <td>{p.zones?.join(", ")}</td>
+                  <td>{p.zones?.join(", ") || "—"}</td>
+                  <td>
+                    {p.available ? (
+                      <span className="badge bg-green">Disponible</span>
+                    ) : (
+                      <span className="badge bg-red">Ocupado</span>
+                    )}
+                  </td>
                   <td>
                     <button
                       className="btn small bg-yellow"
@@ -213,6 +221,24 @@ export default function ProveedorPage() {
           onDelivered: delivered,
         }}
       />
+
+      {/* === LISTA DE PROVEEDORES DISPONIBLES === */}
+      <div className="card">
+        <h3>Proveedores disponibles</h3>
+        <ul className="small">
+          {proveedores
+            .filter((p) => p.available)
+            .map((p) => (
+              <li key={p._id}>
+                {p.name} — {p.contact} —{" "}
+                <strong>{p.zones?.join(", ")}</strong>
+              </li>
+            ))}
+        </ul>
+        {proveedores.filter((p) => p.available).length === 0 && (
+          <p className="small">Ningún proveedor está disponible ahora.</p>
+        )}
+      </div>
     </>
   );
 }
