@@ -42,8 +42,27 @@ export const api = {
       role: "PLATAFORMA",
     }),
 
-  // === Tiendas / Usuarios ===
+  // === Tiendas ===
   listStores: () => http("/api/stores"),
+  createStore: (data) =>
+    http("/api/stores", {
+      method: "POST",
+      body: data,
+      role: "PLATAFORMA", // o "TENDERO" si decides que los tenderos también puedan crear tiendas
+    }),
+  updateStore: (id, data) =>
+    http(`/api/stores/${id}`, {
+      method: "PUT",
+      body: data,
+      role: "PLATAFORMA",
+    }),
+  deleteStore: (id) =>
+    http(`/api/stores/${id}`, {
+      method: "DELETE",
+      role: "PLATAFORMA",
+    }),
+
+  // === Usuarios ===
   listUsers: () => http("/api/users"),
   createUser: (data) =>
     http("/api/users", {

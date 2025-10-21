@@ -26,40 +26,56 @@ export const getOrders = asyncHandler(async (req, res) => {
 export const createOrder = asyncHandler(async (req, res) => {
   const { tendero_user_id, store_id, items } = req.body;
 
+  console.log("🟦 [CREATE ORDER] Datos recibidos del frontend:");
+  console.log("➡️ tendero_user_id:", tendero_user_id);
+  console.log("➡️ store_id:", store_id);
+  console.log("➡️ items:", items);
+
   if (!tendero_user_id || !store_id || !items?.length)
     return res.status(400).json({ error: "Datos incompletos" });
 
-  // 1) Validar tienda y obtener zona
+  // 1️⃣ Validar tienda y obtener zona
   const store = await Store.findById(store_id);
   if (!store) return res.status(404).json({ error: "Tienda no encontrada" });
 
   const zone = store.zone;
 
-  // 2) Un pedido ACTIVO por tendero
-  const ACTIVE = ["pendiente","en_consolidacion","en_asignacion","en_despacho"];
-  const existsActive = await Order.exists({ tendero_user_id, status: { $in: ACTIVE } });
-  if (existsActive)
-    return res.status(409).json({ error: "Ya existe un pedido activo para este tendero" });
+  console.log(`🏪 Tienda encontrada: ${store.name} (${zone})`);
 
-  // 3) Validar productos del catálogo (no crear nuevos)
-  const productIds = items.map(i => i.product_id);
+  // 2️⃣ Un pedido ACTIVO por tienda (no por tendero)
+  const ACTIVE = ["pendiente", "en_consolidacion", "en_asignacion", "en_despacho"];
+  const existsActive = await Order.exists({ store_id, status: { $in: ACTIVE } });
+
+  console.log("🔍 Buscando pedidos activos para esta tienda...");
+  if (existsActive) {
+    console.log("❌ Ya existe un pedido activo para esta tienda. Bloqueado.");
+    return res
+      .status(409)
+      .json({ error: "Ya existe un pedido activo para esta tienda" });
+  }
+  console.log("✅ No hay pedidos activos en esta tienda, se puede crear uno nuevo.");
+
+  // 3️⃣ Validar productos del catálogo (no crear nuevos)
+  const productIds = items.map((i) => i.product_id);
   const products = await Product.find({ _id: { $in: productIds }, active: true });
   if (products.length !== items.length)
-    return res.status(400).json({ error: "Uno o más productos no existen o no están activos" });
+    return res
+      .status(400)
+      .json({ error: "Uno o más productos no existen o no están activos" });
 
-  // 4) Normalizar items con datos del catálogo
-  const normalized = items.map(i => {
-    const p = products.find(pp => String(pp._id) === String(i.product_id));
+  // 4️⃣ Normalizar items con datos del catálogo
+  const normalized = items.map((i) => {
+    const p = products.find((pp) => String(pp._id) === String(i.product_id));
     return {
       product_id: p._id,
       product_name: p.name,
       sku: p.sku,
       quantity: i.quantity,
-      price: p.price
+      price: p.price,
     };
   });
 
-  // 5) Crear pedido con deadline 72h
+  // 5️⃣ Crear pedido con deadline 72h
   const now = new Date();
   const order = await Order.create({
     tendero_user_id,
@@ -70,8 +86,15 @@ export const createOrder = asyncHandler(async (req, res) => {
     received: false,
     created_at: now,
     deadline_at: plusHours(now, 72),
-    consolidation_id: null
+    consolidation_id: null,
   });
+
+  console.log("🟢 Pedido creado correctamente:");
+  console.log(`🧾 ID: ${order._id}`);
+  console.log(`🏪 Tienda: ${store.name}`);
+  console.log(`📍 Zona: ${zone}`);
+  console.log(`👤 Tendero: ${tendero_user_id}`);
+  console.log(`🕒 Fecha: ${order.created_at}`);
 
   res.status(201).json(order);
 });
@@ -81,13 +104,18 @@ export const markReceived = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
   if (!order) return res.status(404).json({ error: "Pedido no encontrado" });
 
+  console.log(`📦 [MARCAR RECIBIDO] Pedido ${order._id} — Estado actual: ${order.status}`);
+
   // Se recomienda permitir recibido solo cuando el proveedor marcó ENTREGADO
   if (order.status !== "entregado")
-    return res.status(400).json({ error: "El pedido aún no está en estado 'entregado'" });
+    return res
+      .status(400)
+      .json({ error: "El pedido aún no está en estado 'entregado'" });
 
   order.received = true;
   order.received_at = new Date();
   await order.save();
 
+  console.log(`✅ Pedido ${order._id} marcado como recibido.`);
   res.json({ ok: true, order });
 });

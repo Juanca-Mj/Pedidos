@@ -4,7 +4,7 @@ const storeSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
   zone: { type: String, required: true },
   contact: { type: String, required: true },
-  tendero_user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  tendero_user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false }, // <-- antes era true
   created_at: { type: Date, default: Date.now }
 });
 
