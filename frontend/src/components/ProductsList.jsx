@@ -61,19 +61,22 @@ export default function ProductsList({ products, onToggle }) {
                     alignItems: "center",
                   }}
                 >
-                  <span className={`badge ${p.active ? "bg-green" : "bg-gray"}`}>
-                    {p.active ? "Sí" : "No"}
-                  </span>
-                  {p.stock <= 0 && (
+                  {/* Mostrar solo “Agotado” si no hay stock */}
+                  {p.stock <= 0 ? (
                     <span
                       className="badge bg-red"
                       style={{
-                        marginTop: "4px",
-                        fontSize: "0.75rem",
-                        opacity: 0.9,
+                        fontSize: "0.8rem",
+                        opacity: 0.95,
                       }}
                     >
                       Agotado
+                    </span>
+                  ) : (
+                    <span
+                      className={`badge ${p.active ? "bg-green" : "bg-gray"}`}
+                    >
+                      {p.active ? "Sí" : "No"}
                     </span>
                   )}
                 </div>
