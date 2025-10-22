@@ -5,9 +5,10 @@ const productSchema = new mongoose.Schema({
   sku: { type: String, required: true, unique: true },
   price: { type: Number, required: true },
   unit: { type: String },
-  created_by_role: { type: String, enum: ["PLATAFORMA"], required: true },
   active: { type: Boolean, default: true },
-  created_at: { type: Date, default: Date.now }
+  stock: { type: Number, default: 0 }, // 🔹 Stock disponible
+  created_by_role: { type: String },
+  created_at: { type: Date, default: Date.now },
 });
 
 export default mongoose.model("Product", productSchema);

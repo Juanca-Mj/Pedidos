@@ -10,6 +10,7 @@ export default function TenderoPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // === Cargar datos ===
   const load = async () => {
     const [p, s, o] = await Promise.all([
       api.listProducts(),
@@ -18,20 +19,36 @@ export default function TenderoPage() {
     ]);
     setProducts(p);
     setStores(s);
-    setOrders(o.filter((ord) => ord.tendero_user_id)); // simple filtrado
+    setOrders(o.filter((ord) => ord.tendero_user_id)); // filtrado simple
   };
 
   useEffect(() => {
     load();
   }, []);
 
+  // === Crear pedido (verifica stock antes) ===
   const createOrder = async (payload) => {
     setLoading(true);
     try {
+      // 🔹 Validar stock antes de enviar al backend
+      const invalid = payload.items.find((i) => {
+        const prod = products.find((p) => p._id === i.product_id);
+        return !prod || prod.stock <= 0 || i.quantity > prod.stock;
+      });
+
+      if (invalid) {
+        const prod = products.find((p) => p._id === invalid.product_id);
+        alert(
+          `❌ No hay suficiente stock para "${prod?.name}". Disponible: ${prod?.stock || 0}`
+        );
+        setLoading(false);
+        return;
+      }
+
       await api.createOrder(payload);
       await load();
       alert(
-        "Pedido creado. Si hay otros pedidos en tu zona, la Plataforma lo consolidará."
+        "✅ Pedido creado. Si hay otros pedidos en tu zona, la Plataforma lo consolidará."
       );
     } catch (e) {
       alert(e.message);
@@ -40,6 +57,7 @@ export default function TenderoPage() {
     }
   };
 
+  // === Marcar pedido como recibido ===
   const markReceived = async (id) => {
     try {
       await api.markOrderReceived(id);
@@ -49,26 +67,25 @@ export default function TenderoPage() {
     }
   };
 
-  // NUEVO: crear tienda
-const createStore = async (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const body = {
-    name: fd.get("name"),
-    zone: fd.get("zone"),
-    contact: fd.get("contact"),
-  }; // ✅ SIN tendero_user_id, lo maneja el backend
+  // === Crear tienda ===
+  const createStore = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const body = {
+      name: fd.get("name"),
+      zone: fd.get("zone"),
+      contact: fd.get("contact"),
+    };
 
-  try {
-    await api.createStore(body);
-    alert("✅ Tienda creada correctamente");
-    e.target.reset();
-    await load();
-  } catch (err) {
-    alert(err.message);
-  }
-};
-
+    try {
+      await api.createStore(body);
+      alert("✅ Tienda creada correctamente");
+      e.target.reset();
+      await load();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   return (
     <>
@@ -80,6 +97,7 @@ const createStore = async (e) => {
         </p>
       </div>
 
+      {/* === FORMULARIO NUEVA TIENDA === */}
       <div className="card">
         <h3>Registrar nueva tienda</h3>
         <form onSubmit={createStore} className="row">
@@ -90,13 +108,18 @@ const createStore = async (e) => {
         </form>
       </div>
 
+      {/* === FORMULARIO DE PEDIDOS === */}
       <OrderForm
         stores={stores}
-        products={products}
+        products={products.filter((p) => p.active && p.stock > 0)} // 🔹 Solo productos activos y con stock
         onSubmit={createOrder}
         loading={loading}
       />
+
+      {/* === LISTA DE PRODUCTOS === */}
       <ProductsList products={products} />
+
+      {/* === PEDIDOS === */}
       <OrdersTable orders={orders} onMarkReceived={markReceived} />
     </>
   );

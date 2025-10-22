@@ -10,6 +10,7 @@ import storeRoutes from "./routes/storeRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import consolidationRoutes from "./routes/consolidationRoutes.js";
+import zoneRoutes from "./routes/zoneRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -31,6 +32,7 @@ app.use("/api/stores", storeRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/consolidations", consolidationRoutes);
+app.use("/api/zones", zoneRoutes);
 
 // Manejo de 404
 app.use((req, res) => res.status(404).json({ error: "Ruta no encontrada" }));

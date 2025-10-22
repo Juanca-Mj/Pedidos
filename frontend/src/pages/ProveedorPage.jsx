@@ -119,7 +119,7 @@ export default function ProveedorPage() {
       <div className="card">
         <h2>Panel PROVEEDOR</h2>
         <p className="small">
-          Administra tus datos y visualiza consolidaciones.
+          Administra tus datos, verifica tus consolidaciones y estados de disponibilidad.
         </p>
       </div>
 
@@ -187,9 +187,9 @@ export default function ProveedorPage() {
                   <td>{p.zones?.join(", ") || "—"}</td>
                   <td>
                     {p.available ? (
-                      <span className="badge bg-green">Disponible</span>
+                      <span className="badge bg-green">🟩 Disponible</span>
                     ) : (
-                      <span className="badge bg-red">Ocupado</span>
+                      <span className="badge bg-red">🟥 Ocupado</span>
                     )}
                   </td>
                   <td>

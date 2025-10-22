@@ -1,4 +1,3 @@
-// src/api/client.js
 const API = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 // Función base para peticiones HTTP
@@ -40,6 +39,22 @@ export const api = {
     http(`/api/products/${id}/toggle`, {
       method: "PUT",
       role: "PLATAFORMA",
+    }),
+
+  // 🔹 Actualizar stock manualmente (establecer nuevo valor)
+  updateStock: (id, stock) =>
+    http(`/api/products/${id}/stock`, {
+      method: "PUT",
+      role: "PLATAFORMA",
+      body: { stock },
+    }),
+
+  // 🔹 Reabastecer stock (sumar unidades)
+  addStock: (id, amount) =>
+    http(`/api/products/${id}/stock/add`, {
+      method: "PUT",
+      role: "PLATAFORMA",
+      body: { amount },
     }),
 
   // === Tiendas ===
@@ -119,5 +134,19 @@ export const api = {
     http(`/api/consolidations/${id}/deliver`, {
       method: "POST",
       role: "PROVEEDOR",
+    }),
+
+  // === 🗺️ Zonas ===
+  listZones: () => http("/api/zones"),
+  createZone: (data) =>
+    http("/api/zones", {
+      method: "POST",
+      body: data,
+      role: "PLATAFORMA",
+    }),
+  deleteZone: (id) =>
+    http(`/api/zones/${id}`, {
+      method: "DELETE",
+      role: "PLATAFORMA",
     }),
 };

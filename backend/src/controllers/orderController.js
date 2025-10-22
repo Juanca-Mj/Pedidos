@@ -6,7 +6,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 // Helper: sumar horas
 const plusHours = (date, h) => new Date(date.getTime() + h * 3600000);
 
+// ==============================================
 // GET /api/orders   (filtros opcionales: ?zone=...&store=...&tendero=...)
+// ==============================================
 export const getOrders = asyncHandler(async (req, res) => {
   const { zone, store, tendero } = req.query;
   const q = {};
@@ -22,7 +24,9 @@ export const getOrders = asyncHandler(async (req, res) => {
   res.json(orders);
 });
 
-// POST /api/orders  (TENDERO crea pedido, solo selecciona de catálogo)
+// ==============================================
+// POST /api/orders  (TENDERO crea pedido)
+// ==============================================
 export const createOrder = asyncHandler(async (req, res) => {
   const { tendero_user_id, store_id, items } = req.body;
 
@@ -39,7 +43,6 @@ export const createOrder = asyncHandler(async (req, res) => {
   if (!store) return res.status(404).json({ error: "Tienda no encontrada" });
 
   const zone = store.zone;
-
   console.log(`🏪 Tienda encontrada: ${store.name} (${zone})`);
 
   // 2️⃣ Un pedido ACTIVO por tienda (no por tendero)
@@ -49,31 +52,46 @@ export const createOrder = asyncHandler(async (req, res) => {
   console.log("🔍 Buscando pedidos activos para esta tienda...");
   if (existsActive) {
     console.log("❌ Ya existe un pedido activo para esta tienda. Bloqueado.");
-    return res
-      .status(409)
-      .json({ error: "Ya existe un pedido activo para esta tienda" });
+    return res.status(409).json({ error: "Ya existe un pedido activo para esta tienda" });
   }
   console.log("✅ No hay pedidos activos en esta tienda, se puede crear uno nuevo.");
 
-  // 3️⃣ Validar productos del catálogo (no crear nuevos)
+  // 3️⃣ Validar productos del catálogo activos
   const productIds = items.map((i) => i.product_id);
   const products = await Product.find({ _id: { $in: productIds }, active: true });
   if (products.length !== items.length)
-    return res
-      .status(400)
-      .json({ error: "Uno o más productos no existen o no están activos" });
+    return res.status(400).json({ error: "Uno o más productos no existen o no están activos" });
 
-  // 4️⃣ Normalizar items con datos del catálogo
-  const normalized = items.map((i) => {
+  // 4️⃣ Verificar stock disponible y descontar
+  const normalized = [];
+
+  for (const i of items) {
     const p = products.find((pp) => String(pp._id) === String(i.product_id));
-    return {
+    if (!p) continue;
+
+    // 🔹 Validar stock suficiente
+    if (p.stock < i.quantity) {
+      console.log(`⚠️ Stock insuficiente para ${p.name}. Disponible: ${p.stock}, solicitado: ${i.quantity}`);
+      return res.status(400).json({
+        error: `Stock insuficiente para ${p.name}. Disponible: ${p.stock}, solicitado: ${i.quantity}`,
+      });
+    }
+
+    // 🔹 Descontar stock
+    p.stock -= i.quantity;
+    if (p.stock < 0) p.stock = 0; // seguridad extra
+    await p.save();
+
+    console.log(`📦 Nuevo stock de ${p.name}: ${p.stock}`);
+
+    normalized.push({
       product_id: p._id,
       product_name: p.name,
       sku: p.sku,
       quantity: i.quantity,
       price: p.price,
-    };
-  });
+    });
+  }
 
   // 5️⃣ Crear pedido con deadline 72h
   const now = new Date();
@@ -99,18 +117,18 @@ export const createOrder = asyncHandler(async (req, res) => {
   res.status(201).json(order);
 });
 
+// ==============================================
 // POST /api/orders/:id/received  (TENDERO marca recibido)
+// ==============================================
 export const markReceived = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
   if (!order) return res.status(404).json({ error: "Pedido no encontrado" });
 
   console.log(`📦 [MARCAR RECIBIDO] Pedido ${order._id} — Estado actual: ${order.status}`);
 
-  // Se recomienda permitir recibido solo cuando el proveedor marcó ENTREGADO
+  // Solo se puede marcar recibido si ya fue entregado
   if (order.status !== "entregado")
-    return res
-      .status(400)
-      .json({ error: "El pedido aún no está en estado 'entregado'" });
+    return res.status(400).json({ error: "El pedido aún no está en estado 'entregado'" });
 
   order.received = true;
   order.received_at = new Date();

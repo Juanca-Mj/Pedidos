@@ -94,11 +94,11 @@ export const createConsolidation = asyncHandler(async (req, res) => {
   );
 
   // 6️⃣ Buscar proveedor disponible automáticamente
-  const provider = await User.findOne({
-    role: "PROVEEDOR",
-    zones: zone,
-    available: true,
-  });
+ const provider = await User.findOne({
+  role: "PROVEEDOR",
+  zones: { $in: [zone] }, // ✅ busca proveedores que tengan esa zona en su arreglo
+  available: true,
+});
 
   if (provider) {
     cons.provider_id = provider._id;
