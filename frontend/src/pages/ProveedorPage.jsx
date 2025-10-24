@@ -116,6 +116,18 @@ export default function ProveedorPage() {
 
   return (
     <>
+      {/* === BOTÓN DE CERRAR SESIÓN === */}
+      <button
+        className="btn"
+        style={{ float: "right", backgroundColor: "#dc2626", color: "#fff" }}
+        onClick={() => {
+          localStorage.removeItem("usuarioActivo");
+          window.location.href = "/";
+        }}
+      >
+        Cerrar sesión
+      </button>
+
       <div className="card">
         <h2>Panel PROVEEDOR</h2>
         <p className="small">

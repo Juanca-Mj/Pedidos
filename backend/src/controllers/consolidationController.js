@@ -2,15 +2,13 @@ import Consolidation from "../models/Consolidation.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import Store from "../models/Store.js";
-import User from "../models/User.js"; // 🔹 Necesario para asignar proveedores
+import User from "../models/User.js"; 
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 // Estados activos
 const CONS_ACTIVE = ["en_consolidacion", "en_asignacion", "en_despacho"];
 
-// =========================================================
-// GET /api/consolidations  (filtro opcional ?zone=...&status=...)
-// =========================================================
+
 export const getConsolidations = asyncHandler(async (req, res) => {
   const { zone, status } = req.query;
   const q = {};
@@ -24,9 +22,7 @@ export const getConsolidations = asyncHandler(async (req, res) => {
   res.json(cons);
 });
 
-// =========================================================
-// POST /api/consolidations  (PLATAFORMA) body: { zone: "Zona Norte" }
-// =========================================================
+
 export const createConsolidation = asyncHandler(async (req, res) => {
   const { zone } = req.body;
   if (!zone) return res.status(400).json({ error: "Debe indicar 'zone'" });
@@ -127,10 +123,7 @@ export const createConsolidation = asyncHandler(async (req, res) => {
   res.status(201).json(cons);
 });
 
-// =========================================================
-// POST /api/consolidations/:id/assign-provider (PLATAFORMA)
-// body: { provider_user_id }
-// =========================================================
+
 export const assignProvider = asyncHandler(async (req, res) => {
   const { provider_user_id } = req.body;
   const cons = await Consolidation.findById(req.params.id);
