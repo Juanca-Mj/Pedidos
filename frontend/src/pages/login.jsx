@@ -1,99 +1,142 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 export default function LoginPage() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleLogin = (e) => {
     e.preventDefault();
 
-    if (!email) {
-      Swal.fire("Error", "Debes ingresar un correo", "error");
+    if (!email || !password) {
+      Swal.fire("Campos vacíos", "Por favor completa todos los campos.", "warning");
       return;
     }
 
-    if (email.includes("@tendero")) {
-      localStorage.setItem("usuarioActivo", email);
-      navigate("/tendero");
-    } else if (email.includes("@plataforma")) {
-      localStorage.setItem("usuarioActivo", email);
-      navigate("/plataforma");
-    } else if (email.includes("@proveedor")) {
-      localStorage.setItem("usuarioActivo", email);
-      navigate("/proveedor");
-    } else {
-      Swal.fire(
-        "Usuario inválido",
-        "El correo debe contener @tendero, @plataforma o @proveedor",
-        "warning"
-      );
-    }
-  };
+    localStorage.setItem("usuarioActivo", email);
 
-  const estilos = {
-    contenedor: {
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      height: "100vh",
-      backgroundColor: "#f3f4f6",
-    },
-    card: {
-      backgroundColor: "#fff",
-      padding: "40px",
-      borderRadius: "12px",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-      textAlign: "center",
-      width: "360px",
-    },
-    input: {
-      width: "100%",
-      padding: "10px",
-      marginBottom: "15px",
-      borderRadius: "8px",
-      border: "1px solid #ccc",
-    },
-    boton: {
-      width: "100%",
-      padding: "10px",
-      border: "none",
-      borderRadius: "8px",
-      backgroundColor: "#2563eb",
-      color: "white",
-      cursor: "pointer",
-      fontWeight: "500",
-      transition: "0.3s",
-    },
+    if (email.includes("@tendero")) navigate("/tendero");
+    else if (email.includes("@plataforma")) navigate("/plataforma");
+    else if (email.includes("@proveedor")) navigate("/proveedor");
+    else Swal.fire("Error", "Correo no válido para ningún rol.", "error");
   };
 
   return (
-    <div style={estilos.contenedor}>
-      <form style={estilos.card} onSubmit={handleLogin}>
-        <h2 style={{ marginBottom: "20px" }}>Iniciar sesión</h2>
+    <div
+      style={{
+        height: "100vh",
+        background: "linear-gradient(135deg, #0f172a, #1e293b)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "'Poppins', sans-serif",
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: "#1e293b",
+          padding: "40px",
+          borderRadius: "16px",
+          width: "100%",
+          maxWidth: "400px",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+          transition: "all 0.3s ease",
+        }}
+        className="login-card"
+      >
+        <h2
+          style={{
+            color: "#fff",
+            textAlign: "center",
+            marginBottom: "20px",
+            fontWeight: "600",
+          }}
+        >
+          Iniciar sesión
+        </h2>
 
-        <input
-          style={estilos.input}
-          type="email"
-          placeholder="Correo (ej: juan@tendero)"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <form onSubmit={handleLogin}>
+          <input
+            type="email"
+            placeholder="Correo electrónico"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "12px",
+              borderRadius: "8px",
+              border: "1px solid #334155",
+              backgroundColor: "#0f172a",
+              color: "#fff",
+              marginBottom: "12px",
+              outline: "none",
+              transition: "border-color 0.3s",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = "#38bdf8")}
+            onBlur={(e) => (e.target.style.borderColor = "#334155")}
+          />
 
-        <input
-          style={estilos.input}
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "12px",
+              borderRadius: "8px",
+              border: "1px solid #334155",
+              backgroundColor: "#0f172a",
+              color: "#fff",
+              marginBottom: "20px",
+              outline: "none",
+              transition: "border-color 0.3s",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = "#38bdf8")}
+            onBlur={(e) => (e.target.style.borderColor = "#334155")}
+          />
 
-        <button style={estilos.boton} type="submit">
-          Ingresar
-        </button>
-      </form>
+          <button
+            type="submit"
+            style={{
+              width: "100%",
+              padding: "12px",
+              background: "linear-gradient(135deg, #22c55e, #16a34a)",
+              color: "white",
+              fontWeight: "600",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              transition: "all 0.3s",
+            }}
+            onMouseOver={(e) =>
+              (e.target.style.background = "linear-gradient(135deg, #16a34a, #15803d)")
+            }
+            onMouseOut={(e) =>
+              (e.target.style.background = "linear-gradient(135deg, #22c55e, #16a34a)")
+            }
+          >
+            Ingresar
+          </button>
+        </form>
+
+        <p
+          style={{
+            color: "#94a3b8",
+            textAlign: "center",
+            fontSize: "14px",
+            marginTop: "20px",
+          }}
+        >
+          Accede según tu rol: <br />
+          <span style={{ color: "#38bdf8" }}>@tendero</span>,{" "}
+          <span style={{ color: "#38bdf8" }}>@plataforma</span>,{" "}
+          <span style={{ color: "#38bdf8" }}>@proveedor</span>
+        </p>
+      </div>
     </div>
   );
 }
