@@ -89,23 +89,39 @@ export default function TenderoPage() {
 
   return (
     <>
-      {/* === BOTÓN DE CERRAR SESIÓN === */}
-      <button
-        className="btn"
-        style={{ float: "right", backgroundColor: "#dc2626", color: "#fff" }}
-        onClick={() => {
-          localStorage.removeItem("usuarioActivo");
-          window.location.href = "/";
+      {/* === ENCABEZADO CON BOTÓN === */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
         }}
       >
-        Cerrar sesión
-      </button>
+        <h2>Bienvenido tendero</h2>
 
+        <button
+          className="btn"
+          style={{
+            backgroundColor: "#dc2626",
+            color: "#fff",
+            padding: "8px 16px",
+            borderRadius: "8px",
+          }}
+          onClick={() => {
+            localStorage.removeItem("usuarioActivo");
+            window.location.href = "/";
+          }}
+        >
+          Cerrar sesión
+        </button>
+      </div>
+
+      {/* === DESCRIPCIÓN === */}
       <div className="card">
-        <h2>Panel TENDERO</h2>
         <p className="small">
-          Crea pedidos seleccionando productos del catálogo o registra una
-          nueva tienda con su zona.
+          Crea pedidos seleccionando productos del catálogo o registra una nueva
+          tienda con su zona.
         </p>
       </div>
 

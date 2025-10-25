@@ -12,15 +12,9 @@ export default function App() {
   return (
     <div className="app">
       <div className="container">
-        <h1>Pedidos por Zona</h1>
-        <p className="small">(roles: Tendero, Plataforma, Proveedor)</p>
+        
 
-        {/* ✅ Pasamos el rol detectado al NavBar */}
-        <NavBar
-          isTendero={isTendero}
-          isPlataforma={isPlataforma}
-          isProveedor={isProveedor}
-        />
+       
 
         <Outlet />
       </div>

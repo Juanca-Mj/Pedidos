@@ -3,11 +3,12 @@ import Swal from "sweetalert2";
 import { api } from "../api/client";
 import ProductsList from "../components/ProductsList";
 import ConsolidationsTable from "../components/ConsolidationsTable";
+import PendingOrdersTable from "../components/PendingOrdersTable";
 
 export default function PlataformaPage() {
   const [products, setProducts] = useState([]);
   const [conss, setConss] = useState([]);
-  const [zones, setZones] = useState([]); // ✅ dinámico desde backend
+  const [zones, setZones] = useState([]);
   const [zone, setZone] = useState("");
   const [providers, setProviders] = useState([]);
 
@@ -176,23 +177,39 @@ export default function PlataformaPage() {
 
   return (
     <>
-      {/* === BOTÓN DE CERRAR SESIÓN === */}
-      <button
-        className="btn"
-        style={{ float: "right", backgroundColor: "#dc2626", color: "#fff" }}
-        onClick={() => {
-          localStorage.removeItem("usuarioActivo");
-          window.location.href = "/";
+      {/* === ENCABEZADO === */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
         }}
       >
-        Cerrar sesión
-      </button>
+        <h2>Bienvenido a la plataforma</h2>
 
+        {/* === BOTÓN DE CERRAR SESIÓN === */}
+        <button
+          className="btn"
+          style={{
+            backgroundColor: "#dc2626",
+            color: "#fff",
+            padding: "8px 16px",
+            borderRadius: "8px",
+          }}
+          onClick={() => {
+            localStorage.removeItem("usuarioActivo");
+            window.location.href = "/";
+          }}
+        >
+          Cerrar sesión
+        </button>
+      </div>
+
+      
+      {/* === PEDIDOS PENDIENTES === */}
       <div className="card">
-        <h2>Panel PLATAFORMA</h2>
-        <p className="small">
-          Gestiona catálogo, zonas, consolida pedidos por zona y asigna proveedores.
-        </p>
+        <PendingOrdersTable />
       </div>
 
       {/* === CREAR PRODUCTO === */}

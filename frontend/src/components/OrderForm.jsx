@@ -25,6 +25,8 @@ export default function OrderForm({ stores, products, onSubmit, loading }){
     onSubmit({ tendero_user_id: tenderoUserId, store_id: storeId, items });
   }
 
+
+
   return (
     <div className="card">
       <h3>Nuevo pedido (Tendero)</h3>

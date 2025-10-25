@@ -31,6 +31,7 @@ export default function ProductsList({ products, onToggle }) {
             <th>Nombre</th>
             <th>SKU</th>
             <th>Precio</th>
+            <th>Unidad</th>
             <th>Stock</th>
             <th>Activo</th>
             {onToggle && <th>Acciones</th>}
@@ -42,6 +43,7 @@ export default function ProductsList({ products, onToggle }) {
               <td>{p.name}</td>
               <td className="small">{p.sku}</td>
               <td>$ {p.price}</td>
+              <td className="small">{p.unit || '-'}</td>
 
               {/* === STOCK === */}
               <td>

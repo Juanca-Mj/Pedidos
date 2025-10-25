@@ -27,6 +27,9 @@ async function http(path, { method = "GET", body, role } = {}) {
 // === API GENERAL (centralizada) ===========
 // ==========================================
 export const api = {
+  // === Pedidos ===
+  listOrders: () => http("/api/orders"),
+
   // === Productos ===
   listProducts: () => http("/api/products"),
   createProduct: (data) =>

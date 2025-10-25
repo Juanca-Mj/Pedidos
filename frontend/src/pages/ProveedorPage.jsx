@@ -116,24 +116,35 @@ export default function ProveedorPage() {
 
   return (
     <>
-      {/* === BOTÓN DE CERRAR SESIÓN === */}
-      <button
-        className="btn"
-        style={{ float: "right", backgroundColor: "#dc2626", color: "#fff" }}
-        onClick={() => {
-          localStorage.removeItem("usuarioActivo");
-          window.location.href = "/";
+      {/* === ENCABEZADO CON BOTÓN === */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
         }}
       >
-        Cerrar sesión
-      </button>
+        <h2>Bienvenido proveedor</h2>
 
-      <div className="card">
-        <h2>Panel PROVEEDOR</h2>
-        <p className="small">
-          Administra tus datos, verifica tus consolidaciones y estados de disponibilidad.
-        </p>
+        <button
+          className="btn"
+          style={{
+            backgroundColor: "#dc2626",
+            color: "#fff",
+            padding: "8px 16px",
+            borderRadius: "8px",
+          }}
+          onClick={() => {
+            localStorage.removeItem("usuarioActivo");
+            window.location.href = "/";
+          }}
+        >
+          Cerrar sesión
+        </button>
       </div>
+
+      
 
       {/* === FORMULARIO === */}
       <div className="card">
