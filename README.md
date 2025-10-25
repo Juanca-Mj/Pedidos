@@ -38,7 +38,7 @@ cd backend
 npm install
 
 
-Crea un archivo .env con tus datos de conexión:
+Crea un archivo .env con estos de conexión:
 
 PORT=4000
 MONGO_URI=mongodb+srv://Juanca:Juanca%406021@tienda.onidavh.mongodb.net/pedidos_tenderos?retryWrites=true&w=majority
